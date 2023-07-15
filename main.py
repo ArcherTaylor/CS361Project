@@ -32,18 +32,13 @@ class StockUpdater(QObject):
 
     def update_stock_price(self):
         while True:
-            # Check the condition for updating the stock price
             if globals.bs_ticker_viewing != "":
-                print(f"Here I would do an update for {globals.bs_ticker_viewing}!")
-                # Perform the logic to fetch the updated stock price
-                # For demonstration purposes, a random price is generated here
-                # Replace this code with your actual logic to fetch the stock price
                 price_response = requests.get(f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={globals.bs_ticker_viewing}&apikey={AVANTAGE_API_KEY}')
                 price_data = price_response.json()['Global Quote']['05. price']
 
                 self.stock_price_updated.emit(price_data)
 
-            time.sleep(60)  # Sleep for 1 minute    
+            time.sleep(60) 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):

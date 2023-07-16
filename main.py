@@ -4,10 +4,12 @@ from dotenv import load_dotenv
 import os
 import globals
 from PyQt6 import QtWidgets, uic
-from PyQt6.QtCore import QTimer, QObject, pyqtSignal
+from PyQt6.QtCore import QTimer, QObject, pyqtSignal, Qt, pyqtSlot
 import requests
 import threading
 import time
+from portfolio_widget import Ui_Form as custom_portfolio_widget
+
 
 from MainWindow import Ui_MainWindow
 
@@ -28,8 +30,10 @@ class StockUpdater(QObject):
         super().__init__()
 
     def start_updating(self):
-        threading.Thread(target=self.update_stock_price).start()
-
+        StockUpdaterThread = threading.Thread(target=self.update_stock_price)
+        StockUpdaterThread.daemon = True
+        StockUpdaterThread.start()
+        
     def update_stock_price(self):
         while True:
             if globals.bs_ticker_viewing != "":
@@ -66,6 +70,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.bs_sell_cancel.clicked.connect(self.bs_buysell_cancel_clicked)
         self.bs_buy_confirm.clicked.connect(self.bs_buy_confirm_clicked)
         self.bs_sell_confirm.clicked.connect(self.bs_sell_confirm_clicked)
+        self.bs_portfolio.clicked.connect(self.bs_portfolio_clicked)
+        self.bs_bs.clicked.connect(self.bs_bs_clicked)
+        self.bs_reports.clicked.connect(self.bs_reports_clicked)
+        self.sell_sell_button.clicked.connect(self.sell_sell_clicked)
+        self.sell_confirm_button.clicked.connect(self.sell_confirm_clicked)
+        self.portfolio_reports.clicked.connect(self.portfolio_reports_clicked)
+        self.portfolio_portfolio.clicked.connect(self.portfolio_portfolio_clicked)
+        self.portfolio_bs.clicked.connect(self.portfolio_bs_clicked)
+
+    def bs_reports_clicked(self):
+        self.stackedWidget.setCurrentIndex(6)
+
+    def portfolio_reports_clicked(self):
+        self.stackedWidget.setCurrentIndex(6)
+    
+    def portfolio_portfolio_clicked(self):
+        self.InitializePortfolioPage()
+
+    def portfolio_bs_clicked(self):
+        self.InitializeBuySellPage()
+        self.stackedWidget.setCurrentIndex(4)
 
     def InitializeWelcomePage(self):
         self.welcome_page_welcome_label.setText(f"<html><head/><body><p align='center'><span style=' font-size:36pt; font-weight:700;'>Welcome, {globals.username}!</span></p></body></html>")
@@ -73,7 +98,73 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def InitializeBuySellPage(self):
         self.bs_reset_ticker_box()
         globals.bs_ticker_viewing = ""
+        globals.bs_ticker_viewing_price_now = ""
+        globals.bs_ticker_viewing_quantity_owned = ""
         window.bs_stacked_widget.setCurrentIndex(0)
+
+    def InitializePortfolioPage(self):
+
+        for i in reversed(range(self.portfolio_verticalLayout.count())): 
+            self.portfolio_verticalLayout.itemAt(i).widget().setParent(None)
+
+        connection = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+
+        cursor = connection.cursor()
+
+        find_query = "SELECT stock_ticker, stock_quantity, buying_price FROM user_stocks WHERE username = %s"
+        cursor.execute(find_query, (globals.username,))
+        found_info = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        for stocks in found_info:
+            custom_widget = custom_portfolio_widget()
+            custom_widget.setupUi(self)
+            self.update_portfolio_widget_data(custom_widget, stocks[0], stocks[1], stocks[2])
+            self.portfolio_verticalLayout.addWidget(custom_widget.portfolio_base)
+            custom_widget.sellButton.clicked.connect(lambda _, t=stocks[0], q=stocks[1]: self.sell_button_clicked(t, q))
+
+        self.portfolio_verticalLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.update_portfolio_value(found_info)
+
+    def update_portfolio_value(self, database_info):
+        portfolio_value = 0
+        for stocks in database_info:
+            price_response = requests.get(f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={str(stocks[0])}&apikey={AVANTAGE_API_KEY}')
+            if price_response != {}:
+                price_data = price_response.json()['Global Quote']['05. price']
+                stock_valuation = round((float(price_data) * float(stocks[1])), 2)
+                portfolio_value += stock_valuation
+        self.portfolio_value_label.setText(f"<html><head/><body><p><span style=' font-size:48pt; font-weight:700;'>Current Portfolio Value: </span><span style=' font-size:48pt; font-weight:700; color:#85bb65;'>${portfolio_value}</span></p></body></html>")
+
+    def sell_button_clicked(self, ticker, quantity):
+        self.InitializeSellPage(ticker, quantity)
+        self.stackedWidget.setCurrentIndex(7)
+
+    def InitializeSellPage(self, ticker, quantity):
+        self.sell_qty_widget.setCurrentIndex(0)
+        self.sell_ticker_label.setText(f"<html><head/><body><p align='center'><span style=' font-size:36pt; font-weight:700;'>{ticker}</span></p></body></html>")
+        self.sell_confirm_widget.hide()
+        self.sell_notice_label.setText(f"<html><head/><body><p><span style=' font-weight:700;'>Please enter the quantity of shares you would like to sell. </span></p><p><span style=' font-weight:700;'>You have {quantity} shares available.</span></p></body></html>")
+        globals.sell_ticker_viewing = ticker
+        globals.sell_ticker_viewing_quantity = quantity
+
+    def update_portfolio_widget_data(self, custom_widget, ticker, quantity, buying_price):
+        custom_widget.ticker_label.setText(str(ticker))
+        custom_widget.quantity_label.setText(str(quantity))
+        custom_widget.buyingprice_label.setText(f"${str(buying_price)}")
+
+        price_response = requests.get(f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={AVANTAGE_API_KEY}')
+        price_data = price_response.json()['Global Quote']['05. price']
+        custom_widget.currprice_label.setText(f"${str(price_data)}")
+        
 
     def LCA_page_login_button_clicked(self):
         window.stackedWidget.setCurrentIndex(1)
@@ -152,6 +243,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         window.stackedWidget.setCurrentIndex(6)
 
     def welcome_view_portfolio_clicked(self):
+        self.InitializePortfolioPage()
         window.stackedWidget.setCurrentIndex(5)
 
     def bs_reset_ticker_box(self):
@@ -304,6 +396,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         def timer_timeout_2():
             window.bs_stacked_widget.setCurrentIndex(0)
+            self.bs_processing_label.setText("<html><head/><body><p align='center'><span style=' font-size:24pt; font-weight:700;'>Processing Order</span></p></body></html>")
             timer.stop()
             timer.timeout.disconnect(timer_timeout_2)
 
@@ -314,7 +407,59 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def stock_price_update(self, price_data):
         self.bs_info_price.setText(f"<html><head/><body><p align='center'><span style=' font-size:36pt; font-weight:700;'>${price_data}</span></p></body></html>")
+
+    def bs_portfolio_clicked(self):
+        self.InitializePortfolioPage()
+        window.stackedWidget.setCurrentIndex(5)
+
+    def bs_bs_clicked(self):
+        self.InitializeBuySellPage()
         
+    def sell_sell_clicked(self):
+        if int(self.sell_qty_input.text()) > globals.sell_ticker_viewing_quantity:
+            return
+        price_response = requests.get(f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={globals.sell_ticker_viewing}&apikey={AVANTAGE_API_KEY}')
+        price_data = price_response.json()['Global Quote']['05. price']
+        valuation_calculation = float(price_data) * int(self.sell_qty_input.text())
+        self.sell_confirm_notice.setText(f"<html><head/><body><p><span style=' font-weight:700;'>By hitting &quot;Confirm,&quot; you understand that are you selling </span></p><p><span style=' font-weight:700;'>{self.sell_qty_input.text()} shares of {globals.sell_ticker_viewing} in exchange for ${round(valuation_calculation, 2)}, before Capital Gains tax.</span></p></body></html>")
+        self.sell_confirm_widget.show()
+
+    def sell_confirm_clicked(self):
+        connection = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+
+        cursor = connection.cursor()
+
+        new_quantity = globals.sell_ticker_viewing_quantity - int(self.sell_qty_input.text())
+        if(new_quantity <= 0):
+            deletion_query = "DELETE FROM user_stocks WHERE username = %s AND stock_ticker = %s"
+            cursor.execute(deletion_query, (globals.username, globals.sell_ticker_viewing))
+        else:
+            update_query = "UPDATE user_stocks SET stock_quantity = %s WHERE username = %s AND stock_ticker = %s"
+            cursor.execute(update_query, (new_quantity, globals.username, globals.sell_ticker_viewing))
+
+        connection.commit()
+        cursor.close()  
+        connection.close()
+
+        self.sell_confirm_complete_exit()
+
+    def sell_confirm_complete_exit(self):
+        self.sell_confirm_widget.hide()
+        self.sell_qty_widget.setCurrentIndex(1)
+
+        def timer_timeout_1():
+            self.InitializePortfolioPage()
+            self.stackedWidget.setCurrentIndex(5)
+            timer.timeout.disconnect(timer_timeout_1)
+
+        timer = QTimer()
+        timer.timeout.connect(timer_timeout_1)
+        timer.start(3000)
 
 app = QtWidgets.QApplication(sys.argv)
 

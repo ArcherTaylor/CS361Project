@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>43</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="portfolio_base" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>760</width>
+     <height>43</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>760</width>
+     <height>43</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>760</width>
+     <height>43</height>
+    </size>
+   </property>
+   <widget class="QWidget" name="portfolio_base_widget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>760</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>760</width>
+      <height>41</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>760</width>
+      <height>41</height>
+     </size>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">            background-color: #e0e0e0;
+            color: #000000;
+            border-radius: 10px; /* Adjust the value to control the amount of rounding */</string>
+    </property>
+    <widget class="QLabel" name="ticker_label">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>51</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TICKER</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quantity_label">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>10</y>
+       <width>51</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>QTY</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="buyingprice_label">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>10</y>
+       <width>91</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>BUYING PRICE</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="currprice_label">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>10</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CURR PRICE</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="sellButton">
+     <property name="geometry">
+      <rect>
+       <x>650</x>
+       <y>10</y>
+       <width>100</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Click here to sell shares of this stock!</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border: 2px solid #000000;</string>
+     </property>
+     <property name="text">
+      <string>SELL</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

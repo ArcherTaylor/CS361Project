@@ -48,7 +48,7 @@ flowchart RL
 	subgraph Processing Stage
 	B[API Endpoint] --> C[AWS Lambda]
 end
-	C[AWS Lambda] -- Email Information --> D[Amazon SES] -.-> C[AWS Lambda] -.-> B[API Endpoint] -. Return Notice .-> A[Caller]
+	C[AWS Lambda] -- Email Information --> D[Amazon SES] -.-> C[AWS Lambda] -.-> B[API Endpoint] -. Return JSON .-> A[Caller]
 	subgraph Recipient Stage
 		D[Amazon SES] -- Email --> E[Email Recipient]
 	end

@@ -40,5 +40,15 @@ The processing of these notices are left to the caller.
 
 Sending Data & Receiving Return Notice
 ```mermaid
-flowchart LR
-    A[Caller] -- POST Request --> B[API Endpoint] --> C[AWS Lambda] --> D[Amazon SES] -.-> C[AWS Lambda] -.-> B[API Endpoint] -. Return Notice .-> A[Caller]
+
+flowchart RL
+	subgraph Call Stage
+	A[Caller] -- POST Request --> B[API Endpoint]
+	end
+	subgraph Processing Stage
+	B[API Endpoint] --> C[AWS Lambda]
+end
+	C[AWS Lambda] -- Email Information --> D[Amazon SES] -.-> C[AWS Lambda] -.-> B[API Endpoint] -. Return Notice .-> A[Caller]
+	subgraph Recipient Stage
+		D[Amazon SES] -- Email --> E[Email Recipient]
+	end
